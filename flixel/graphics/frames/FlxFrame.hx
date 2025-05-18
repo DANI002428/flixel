@@ -4,14 +4,15 @@ import flash.display.BitmapData;
 import flash.geom.Point;
 import flash.geom.Rectangle;
 import flixel.graphics.FlxGraphic;
+import flixel.math.FlxMath;
 import flixel.math.FlxMatrix;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.util.FlxColor;
 import flixel.util.FlxDestroyUtil;
 import flixel.util.FlxStringUtil;
-import haxe.ds.Vector;
 import haxe.ds.ArraySort;
+import haxe.ds.Vector;
 
 /**
  * Base class for all frame types
@@ -59,7 +60,7 @@ class FlxFrame implements IFlxDestroyable
 	 * WARNING: For optimization purposes, width and height of this rect
 	 * contain right and bottom coordinates (`x + width` and `y + height`).
 	 */
-	public var uv:FlxRect;
+	public var uv:FlxUVRect;
 
 	public var parent:FlxGraphic;
 
@@ -677,19 +678,64 @@ class FlxFrame implements IFlxDestroyable
  * Just enumeration of all types of frames.
  * Added for faster type detection with less usage of casting.
  */
-@:enum
-abstract FlxFrameType(Int)
+enum abstract FlxFrameType(Int)
 {
 	var REGULAR = 0;
 	var EMPTY = 2;
 	var GLYPH = 3;
 }
 
-@:enum
-abstract FlxFrameAngle(Int) from Int to Int
+enum abstract FlxFrameAngle(Int) from Int to Int
 {
 	var ANGLE_0 = 0;
 	var ANGLE_90 = 90;
 	var ANGLE_NEG_90 = -90;
 	var ANGLE_270 = -90;
+}
+
+/**
+ * FlxRect, but instead of `x`, `y`, `width` and `height`, it takes a `left`, `right`, `top` and
+ * `bottom`. This is for optimization reasons, to reduce arithmetic when drawing vertices
+ */
+@:forward(put)
+abstract FlxUVRect(FlxRect) from FlxRect to flixel.util.FlxPool.IFlxPooled
+{
+	public var left(get, set):Float;
+	inline function get_left():Float { return this.x; }
+	inline function set_left(value):Float { return this.x = value; }
+	
+	/** Top */
+	public var right(get, set):Float;
+	inline function get_right():Float { return this.y; }
+	inline function set_right(value):Float { return this.y = value; }
+	
+	/** Right */
+	public var top(get, set):Float;
+	inline function get_top():Float { return this.width; }
+	inline function set_top(value):Float { return this.width = value; }
+	
+	/** Bottom */
+	public var bottom(get, set):Float;
+	inline function get_bottom():Float { return this.height; }
+	inline function set_bottom(value):Float { return this.height = value; }
+	
+	public inline function set(l, t, r, b)
+	{
+		this.set(l, t, r, b);
+	}
+	
+	public inline function copyTo(uv:FlxUVRect)
+	{
+		uv.set(left, top, right, bottom);
+	}
+	
+	public inline function copyFrom(uv:FlxUVRect)
+	{
+		set(uv.left, uv.top, uv.right, uv.bottom);
+	}
+	
+	public static function get(l = 0.0, t = 0.0, r = 0.0, b = 0.0)
+	{
+		return FlxRect.get(l, t, r, b);
+	}
 }
