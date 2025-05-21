@@ -293,7 +293,10 @@ class FlxGraphic implements IFlxDestroyable
 	 * Class name for the `BitmapData`.
 	 */
 	public var assetsClass(default, null):Class<BitmapData>;
-
+	
+	//xddd
+	public var isDestroyed(get, never):Bool;
+	
 	/**
 	 * Whether this graphic object should stay in the cache after state changes or not.
 	 * `destroyOnNoUse` has no effect when this is set to `true`.
@@ -514,6 +517,11 @@ class FlxGraphic implements IFlxDestroyable
 	 */
 	public inline function getFramesCollections(type:FlxFrameCollectionType):Array<Dynamic>
 	{
+		if (this.isDestroyed)
+		{
+			return [];
+		}
+		
 		var collections:Array<Dynamic> = frameCollections.get(type);
 		if (collections == null)
 		{
@@ -578,6 +586,11 @@ class FlxGraphic implements IFlxDestroyable
 			return FlxGraphic.getBitmap(newBitmap, unique);
 
 		return null;
+	}
+
+	inline function get_isDestroyed()
+	{
+		return shader == null;
 	}
 
 	inline function get_canBeDumped():Bool

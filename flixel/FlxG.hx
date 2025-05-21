@@ -82,6 +82,10 @@ class FlxG
 	 */
 	public static var timeScale:Float = 1;
 
+	//xddd
+
+	public static var animationTimeScale:Float = 1.0;
+
 	/**
 	 * How many times the quad tree should divide the world on each axis.
 	 * Generally, sparse collisions can have fewer divisons,
@@ -679,6 +683,7 @@ class FlxG
 		autoPause = true;
 		fixedTimestep = true;
 		timeScale = 1.0;
+		animationTimeScale = 1.0;
 		elapsed = 0;
 		maxElapsed = 0.1;
 		worldBounds.set(-10, -10, width + 20, height + 20);
