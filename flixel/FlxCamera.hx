@@ -127,12 +127,12 @@ class FlxCamera extends FlxBasic
 	public var targetOffset(default, null):FlxPoint = FlxPoint.get();
 
 	/**
-	 * Used to smoothly track the camera as it follows:
-	 * The percent of the distance to the follow `target` the camera moves per 1/60 sec.
-	 * Values are bounded between `0.0` and `FlxG.updateFrameRate / 60` for consistency across framerates.
-	 * The maximum value means no camera easing. A value of `0` means the camera does not move.
+	 * The ratio of the distance to the follow `target` the camera moves per 1/60 sec.
+	 * Valid values range from `0.0` to `1.0`. `1.0` means the camera always snaps to its target
+	 * position. `0.5` means the camera always travels halfway to the target position, `0.0` means
+	 * the camera does not move. Generally, the lower the value, the more smooth.
 	 */
-	public var followLerp(default, set):Float = 60 / FlxG.updateFramerate;
+	public var followLerp:Float = 1.0;
 
 	/**
 	 * You can assign a "dead zone" to the camera in order to better control its movement.
@@ -1054,6 +1054,7 @@ class FlxCamera extends FlxBasic
 		if (target != null)
 		{
 			updateFollow();
+			updateLerp(elapsed);
 		}
 
 		updateScroll();
@@ -1064,6 +1065,22 @@ class FlxCamera extends FlxBasic
 
 		updateFlashSpritePosition();
 		updateShake(elapsed);
+	}
+
+	function updateLerp(elapsed:Float)
+	{
+		if (followLerp >= 1.0)
+		{
+			scroll.copyFrom(_scrollTarget); // no easing
+		}
+		else if (followLerp > 0.0)
+		{
+			// Adjust lerp based on the current frame rate so lerp is less framerate dependant
+			final adjustedLerp = 1.0 - Math.pow(1.0 - followLerp, elapsed * 60);
+			
+			scroll.x += (_scrollTarget.x - scroll.x) * adjustedLerp;
+			scroll.y += (_scrollTarget.y - scroll.y) * adjustedLerp;
+		}
 	}
 
 	/**
@@ -1161,16 +1178,6 @@ class FlxCamera extends FlxBasic
 
 				_lastTargetPosition.x = target.x;
 				_lastTargetPosition.y = target.y;
-			}
-
-			if (followLerp >= 60 / FlxG.updateFramerate)
-			{
-				scroll.copyFrom(_scrollTarget); // no easing
-			}
-			else
-			{
-				scroll.x += (_scrollTarget.x - scroll.x) * followLerp * FlxG.updateFramerate / 60;
-				scroll.y += (_scrollTarget.y - scroll.y) * followLerp * FlxG.updateFramerate / 60;
 			}
 		}
 	}
@@ -1348,31 +1355,25 @@ class FlxCamera extends FlxBasic
 	/**
 	 * Tells this camera object what `FlxObject` to track.
 	 *
-	 * @param   Target   The object you want the camera to track. Set to `null` to not follow anything.
-	 * @param   Style    Leverage one of the existing "deadzone" presets. Default is `LOCKON`.
+	 * @param   target   The object you want the camera to track. Set to `null` to not follow anything.
+	 * @param   style    Leverage one of the existing "deadzone" presets. Default is `LOCKON`.
 	 *                   If you use a custom deadzone, ignore this parameter and
 	 *                   manually specify the deadzone after calling `follow()`.
-	 * @param   Lerp     How much lag the camera should have (can help smooth out the camera movement).
+	 * @param   lerp     How much lag the camera should have (can help smooth out the camera movement).
 	 */
-	public function follow(Target:FlxObject, ?Style:FlxCameraFollowStyle, ?Lerp:Float):Void
+	public function follow(target:FlxObject, style = LOCKON, lerp = 1.0):Void
 	{
-		if (Style == null)
-			Style = LOCKON;
+		this.style = style;
+		this.target = target;
+		followLerp = lerp;
+		_lastTargetPosition = FlxDestroyUtil.put(_lastTargetPosition);
+		deadzone = FlxDestroyUtil.put(deadzone);
 
-		if (Lerp == null)
-			Lerp = 60 / FlxG.updateFramerate;
-
-		style = Style;
-		target = Target;
-		followLerp = Lerp;
-		var helper:Float;
-		var w:Float = 0;
-		var h:Float = 0;
-		_lastTargetPosition = null;
-
-		switch (Style)
+		switch (style)
 		{
 			case LOCKON:
+				var w:Float = 0;
+				var h:Float = 0;
 				if (target != null)
 				{
 					w = target.width;
@@ -1381,16 +1382,16 @@ class FlxCamera extends FlxBasic
 				deadzone = FlxRect.get((width - w) / 2, (height - h) / 2 - h * 0.25, w, h);
 
 			case PLATFORMER:
-				var w:Float = (width / 8);
-				var h:Float = (height / 3);
+				final w:Float = (width / 8);
+				final h:Float = (height / 3);
 				deadzone = FlxRect.get((width - w) / 2, (height - h) / 2 - h * 0.25, w, h);
 
 			case TOPDOWN:
-				helper = Math.max(width, height) / 4;
+				final helper = Math.max(width, height) / 4;
 				deadzone = FlxRect.get((width - helper) / 2, (height - helper) / 2, helper, helper);
 
 			case TOPDOWN_TIGHT:
-				helper = Math.max(width, height) / 8;
+				final helper = Math.max(width, height) / 8;
 				deadzone = FlxRect.get((width - helper) / 2, (height - helper) / 2, helper, helper);
 
 			case SCREEN_BY_SCREEN:
@@ -1795,11 +1796,6 @@ class FlxCamera extends FlxBasic
 			&& (rect.bottom > viewOffsetY) && (rect.y < viewOffsetHeight);
 		rect.putWeak();
 		return contained;
-	}
-
-	function set_followLerp(Value:Float):Float
-	{
-		return followLerp = FlxMath.bound(Value, 0, 60 / FlxG.updateFramerate);
 	}
 
 	function set_width(Value:Int):Int
