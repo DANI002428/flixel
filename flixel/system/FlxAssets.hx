@@ -12,6 +12,7 @@ import flixel.graphics.frames.FlxFramesCollection;
 import flixel.util.typeLimit.OneOfFour;
 import flixel.util.typeLimit.OneOfThree;
 import flixel.util.typeLimit.OneOfTwo;
+import flixel.system.frontEnds.AssetFrontEnd;
 import openfl.Assets;
 import openfl.utils.ByteArray;
 
@@ -138,10 +139,7 @@ class FlxAssets
 
 	public static inline function getBitmapData(id:String):BitmapData
 	{
-		if (Assets.exists(id))
-			return Assets.getBitmapData(id, false);
-		FlxG.log.error('Could not find a BitmapData asset with ID \'$id\'.');
-		return null;
+		return FlxG.assets.getBitmapData(id);
 	}
 
 	/**
@@ -165,19 +163,19 @@ class FlxAssets
 	 * @param	Graphic	input data to get BitmapData object for.
 	 * @return	BitmapData for specified Dynamic object.
 	 */
-	public static function resolveBitmapData(Graphic:FlxGraphicSource):BitmapData
+	public static function resolveBitmapData(graphic:FlxGraphicSource):BitmapData
 	{
-		if ((Graphic is BitmapData))
+		if ((graphic is BitmapData))
 		{
-			return cast Graphic;
+			return cast graphic;
 		}
-		else if ((Graphic is Class))
+		else if ((graphic is Class))
 		{
-			return FlxAssets.getBitmapFromClass(cast Graphic);
+			return getBitmapFromClass(cast graphic);
 		}
-		else if ((Graphic is String))
+		else if ((graphic is String))
 		{
-			return FlxAssets.getBitmapData(Graphic);
+			return FlxG.assets.getBitmapData(cast graphic);
 		}
 
 		return null;

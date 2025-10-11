@@ -184,12 +184,12 @@ class SoundFrontEnd
 	 * @param	EmbeddedSound	Name of sound assets specified in your .xml project file
 	 * @return	Cached Sound object
 	 */
-	public inline function cache(EmbeddedSound:String):Sound
+	public inline function cache(embeddedSound:String):Sound
 	{
 		// load the sound into the OpenFL assets cache
-		if (Assets.exists(EmbeddedSound, AssetType.SOUND) || Assets.exists(EmbeddedSound, AssetType.MUSIC))
-			return Assets.getSound(EmbeddedSound, true);
-		FlxG.log.error('Could not find a Sound asset with an ID of \'$EmbeddedSound\'.');
+		if (FlxG.assets.exists(embeddedSound, SOUND))
+			return FlxG.assets.getSoundUnsafe(embeddedSound, true);
+		FlxG.log.error('Could not find a Sound asset with an ID of \'$embeddedSound\'.');
 		return null;
 	}
 
@@ -199,7 +199,7 @@ class SoundFrontEnd
 	 */
 	public function cacheAll():Void
 	{
-		for (id in Assets.list(AssetType.SOUND))
+		for (id in FlxG.assets.list(SOUND))
 		{
 			cache(id);
 		}
@@ -351,6 +351,35 @@ class SoundFrontEnd
 			FlxG.game.soundTray.show();
 		}
 		#end
+	}
+	
+		
+	/**
+	 * Takes the volume scale used by Flixel fields and gives the final transformed volume that is
+	 * actually used to play the sound. To reverse this operation, use `reverseSoundCurve`. This
+	 * field is `dynamic` and can be overwritten. 
+	 */
+	public dynamic function applySoundCurve(volume:Float)
+	{
+		return volume;
+		
+		// Example of linear to logarithmic sound curve:
+		// final clampedVolume = Math.max(0, Math.min(1, volume));
+		// return Math.exp(Math.log(0.001) * (1 - clampedVolume));
+	}
+	
+	/**
+	 * Takes a transformed volume and returns the corresponding volume scale used by Flixel fields.
+	 * Used to reverse the operation of `applySoundCurve`. This field is `dynamic` and can be
+	 * set to a custom function.
+	 */
+	public dynamic function reverseSoundCurve(curvedVolume:Float)
+	{
+		return curvedVolume;
+		
+		// Example of logarithmic to linear sound curve:
+		// final clampedVolume = Math.max(minValue, Math.min(1, x));
+		// return 1 - (Math.log(clampedVolume) / Math.log(0.001));
 	}
 
 	function new()
